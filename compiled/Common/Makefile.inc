@@ -92,16 +92,19 @@ $(HOST_EXEC): host-%.out: %.c
 $(OBJ): %.o: %.s
 	riscv64-unknown-linux-gnu-gcc $< -o $@ -lm -fno-common -c
 
+# The harness is compiled per target (with that target's $(MACROS)) into a
+# target-specific object so that parallel builds in one directory do not race
+# on a shared harness object file.
 $(EXEC): %.out: %.o ../Common/gem5-harness.c
 	riscv64-unknown-linux-gnu-gcc $(MACROS) \
-	  ../Common/gem5-harness.c -c -O3 -o gem5-harness.o -lm -fno-common -c
-	riscv64-unknown-linux-gnu-gcc $< gem5-harness.o -o $@ -lm -lpthread -fno-common -static
+	  ../Common/gem5-harness.c -c -O3 -o $*-gem5-harness.o -lm -fno-common -c
+	riscv64-unknown-linux-gnu-gcc $< $*-gem5-harness.o -o $@ -lm -lpthread -fno-common -static
 
 $(CHIPYARD_EXEC): %.riscv: %.o ../Common/chipyard-harness.c
 	riscv64-unknown-elf-gcc ../Common/chipyard-harness.c -c -DPREALLOCATE=1 -mcmodel=medany    \
 	          -std=gnu99 -O3 -ffast-math -fno-common -fno-builtin-printf \
-	          -fno-tree-loop-distribute-patterns -DCHIPYARD $(MACROS)
-	riscv64-unknown-elf-gcc $< chipyard-harness.o ../Common/crt.S -o $@ -nostdlib \
+	          -fno-tree-loop-distribute-patterns -DCHIPYARD $(MACROS) -o $*-chipyard-harness.o
+	riscv64-unknown-elf-gcc $< $*-chipyard-harness.o ../Common/crt.S -o $@ -nostdlib \
 	          -nostartfiles -fno-zero-initialized-in-bss -lm -lgcc -T../Common/htif.ld $(MACROS)
 
 $(LINUX_EXEC): %.linux: %.o
