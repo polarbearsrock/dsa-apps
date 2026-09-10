@@ -41,13 +41,32 @@ void solver(TYPE *a, TYPE *v) {
 struct Arguments {
   TYPE a[N * N], v[N];
   TYPE a_[N * N], v_[N];
+  TYPE ref[N];
 } args_;
 
+// Diagonally dominant system keeps the values bounded.
 struct Arguments *init_data() {
+#ifdef ZERO_DATA
+  return &args_;  // all-zero inputs (hang bisection only)
+#endif
+  for (int i = 0; i < N; ++i)
+    for (int j = 0; j < N; ++j)
+      args_.a[i * N + j] = args_.a_[i * N + j] = (i == j) ? 16.0 : (TYPE) (((i * 7 + j * 3) % 5) - 2);
+  for (int i = 0; i < N; ++i) args_.v[i] = args_.v_[i] = args_.ref[i] = (i % 5) + 1;
   return &args_;
 }
 
+// Mirrors solver(): the pivot is not stored back, no FMA contraction.
 void run_reference(struct Arguments *args) {
+  #pragma clang fp contract(off)
+  TYPE *a = args->a, *v = args->ref;
+  for (int i = 0; i < N - 1; ++i) {
+    TYPE vv = v[i] / a[i * N + i];
+    for (int j = i + 1; j < N; ++j) {
+      TYPE prod = a[i * N + j] * vv;
+      v[j] = v[j] - prod;
+    }
+  }
 }
 
 void run_accelerator(struct Arguments *args, int _) {
@@ -58,7 +77,7 @@ void run_accelerator(struct Arguments *args, int _) {
   }
 }
 
-int sanity_check(struct Arguments *_) {
+int sanity_check(struct Arguments *args) {
+  compare_dbl(args->v_, args->ref, N);
   return 1;
 }
-

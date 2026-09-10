@@ -49,6 +49,6 @@ void run_accelerator(struct Arguments *args) {
 }
 
 int sanity_check(struct Arguments *args) {
-  compare(args->ref, args->c, N * N, "%lf");
+  compare_dbl(args->c, args->ref, N * N);
   return 1;
 }

@@ -35,13 +35,23 @@ void mm(TYPE *a, TYPE *b, TYPE *c) {
 struct Arguments {
   TYPE a[N * M], b[M * P], c[N * P];
   TYPE a_[N * M], b_[M * P], c_[N * P];
+  TYPE ref[N * P];
 } args_;
 
 struct Arguments *init_data() {
+  for (int i = 0; i < N * M; ++i) args_.a[i] = args_.a_[i] = (i % 7) + 1;
+  for (int i = 0; i < M * P; ++i) args_.b[i] = args_.b_[i] = (i % 5) - 2;
   return &args_;
 }
 
-void run_reference(struct Arguments *_) {
+// Same operation order as the accelerator (accumulate over k), no FMA
+// contraction, integer-valued data: the results must match exactly.
+void run_reference(struct Arguments *args) {
+  #pragma clang fp contract(off)
+  for (int i = 0; i < N; ++i)
+    for (int k = 0; k < M; ++k)
+      for (int j = 0; j < P; ++j)
+        args->ref[i * P + j] += args->a[i * M + k] * args->b[k * P + j];
 }
 
 void run_accelerator(struct Arguments *args, int _) {
@@ -52,6 +62,7 @@ void run_accelerator(struct Arguments *args, int _) {
   }
 }
 
-int sanity_check(struct Arguments *_) {
+int sanity_check(struct Arguments *args) {
+  compare_dbl(args->c, args->ref, N * P);
   return 1;
 }

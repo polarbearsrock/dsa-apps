@@ -1,5 +1,5 @@
 
-MACROS = -DGEM5
+MACROS =
 
 ifdef N
 MACROS += -DN=$(N)

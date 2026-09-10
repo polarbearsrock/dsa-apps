@@ -43,12 +43,23 @@ void fir(TYPE a[N], TYPE b[M], TYPE c[N - M + 1]) {
 struct Arguments {
 } args_;
 
-NO_INIT_DATA
-NO_SANITY_CHECK
-
 TYPE a[N], b[M], c[N - M + 1];
 TYPE a_[N], b_[M], c_[N - M + 1];
+TYPE ref[N - M + 1];
 
+struct Arguments *init_data() {
+  for (int i = 0; i < N; ++i) a[i] = a_[i] = (i % 7) - 3;
+  for (int i = 0; i < M; ++i) b[i] = b_[i] = (i % 5) - 2;
+  return &args_;
+}
+
+// Same accumulation order as the accelerator (over j), integer data, no FMA.
+void run_reference(struct Arguments *args) {
+  #pragma clang fp contract(off)
+  for (int j = 0; j < M; ++j)
+    for (int i = 0; i < N - M + 1; ++i)
+      ref[i] += a[i + j] * b[j];
+}
 
 void run_accelerator(struct Arguments *args, int _) {
   if (_) {
@@ -58,3 +69,7 @@ void run_accelerator(struct Arguments *args, int _) {
   }
 }
 
+int sanity_check(struct Arguments *args) {
+  compare_dbl(c, ref, N - M + 1);
+  return 1;
+}
