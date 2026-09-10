@@ -48,6 +48,9 @@ struct Arguments *init_data() {
 // contraction, integer-valued data: the results must match exactly.
 void run_reference(struct Arguments *args) {
   #pragma clang fp contract(off)
+#ifdef SKIP_REFERENCE
+  return;  // hang debugging only: no CPU pass, the data check will fail
+#endif
   for (int i = 0; i < N; ++i)
     for (int k = 0; k < M; ++k)
       for (int j = 0; j < P; ++j)
