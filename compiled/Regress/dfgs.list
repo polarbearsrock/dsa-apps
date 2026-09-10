@@ -1,0 +1,10 @@
+%%
+../Tests/dfgs/vecadd/vecadd_0_4.dfg
+%%
+../Tests/dfgs/matadd/matadd_0_2.dfg
+%%
+../Tests/dfgs/mv/mv_0_2.dfg
+%%
+../Tests/dfgs/acc/acc_0_2.dfg
+%%
+../Dsp/dfgs/solver/solver_0_4_1.dfg
