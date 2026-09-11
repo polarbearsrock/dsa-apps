@@ -71,6 +71,9 @@ static TYPE ref_sqrt(TYPE x) {
 // Mirrors cholesky() operation for operation (same association, no FMA).
 void run_reference(struct Arguments *args) {
   #pragma clang fp contract(off)
+#ifdef SKIP_REFERENCE
+  return;  // waveform runs only: skip the CPU pass so the accelerator starts early (check will fail)
+#endif
   TYPE *a = args->ref_a, *L = args->ref_L;
   for (int i = 0; i < N - 2; ++i) {
     TYPE aii = a[i * (N + 1)];
