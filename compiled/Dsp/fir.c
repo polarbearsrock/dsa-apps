@@ -9,12 +9,16 @@
 #define U 4
 #endif
 
-void fir(TYPE a[N], TYPE b[M], TYPE c[N - M + 1]) {
+// The blocked output loop below computes ceil((N - M + 1) / 32) * 32 outputs, so the
+// output arrays are padded to NC elements; only the first N - M + 1 are checked.
+#define NC (((N - M + 1) + 31) / 32 * 32)
+
+void fir(TYPE a[N], TYPE b[M], TYPE c[NC]) {
   #pragma ss config
   {
     arrayhint(a, N * sizeof(TYPE), 1.0 - (double) N / ((N - M + 1) * M));
     arrayhint(b, M * sizeof(TYPE), 1.0 - 1.0 / (N - M + 1));
-    arrayhint(c, (N - M + 1) * sizeof(TYPE), 31.0 / 32);
+    arrayhint(c, NC * sizeof(TYPE), 31.0 / 32);
     TYPE spad_a[N];
     #pragma ss stream nonblock
     #pragma ss dfg unroll(4)
@@ -43,8 +47,8 @@ void fir(TYPE a[N], TYPE b[M], TYPE c[N - M + 1]) {
 struct Arguments {
 } args_;
 
-TYPE a[N], b[M], c[N - M + 1];
-TYPE a_[N], b_[M], c_[N - M + 1];
+TYPE a[N], b[M], c[NC];
+TYPE a_[N], b_[M], c_[NC];
 TYPE ref[N - M + 1];
 
 struct Arguments *init_data() {
